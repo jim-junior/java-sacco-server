@@ -187,7 +187,9 @@ public class Server2 {
         try {
             String receiptId = commandArgs[1];
             Integer amount = Integer.parseInt(commandArgs[2]);
-            String query = "SELECT * FROM receipts WHERE receipt_number = ? and amount = ?";
+            String date = commandArgs[3];
+
+            String query = "SELECT * FROM contributions WHERE receipt_number = ? and amount = ?";
 
             PreparedStatement preparedStatement = con.prepareStatement(query);
             preparedStatement.setString(1, receiptId);
