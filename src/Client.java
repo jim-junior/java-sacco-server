@@ -10,7 +10,7 @@ public class Client {
     public PrintWriter output = null;
     public boolean loggedIn = false;
     public BufferedReader userInputReader = new BufferedReader(new InputStreamReader(System.in));
-
+    public boolean active = true;
 
     public Client() {
         try {
@@ -19,7 +19,7 @@ public class Client {
             output = new PrintWriter(socket.getOutputStream(), true);
             login();
             if (loggedIn) {
-                displayMenu();
+                start();
             }
         } catch (Exception e) {
             System.out.println("Failed to connect to server");
@@ -27,30 +27,52 @@ public class Client {
         }
     }
 
+    public void start() {
+        try {
+            while (active) {
+                displayMenu();
+                String command = getUserInput();
+                if (command.equals("logout")) {
+                    output.println("logout");
+                    break;
+                }
+                String[] commandParts = command.split(" ");
+                String action = commandParts[0];
+                if (action.equals("deposit")) {
+                    output.println(command);
+                    String res = input.readLine();
+                    System.out.println(res);
+                }
+
+            }
+        } catch (Exception e) {
+            System.out.println("An Error Occured");
+            e.printStackTrace();
+        }
+
+    }
 
     public static void main(String[] args) {
         Client clientApp = new Client();
     }
 
-
     private void login() throws IOException {
-        
-        while(!loggedIn) {
-            
+
+        while (!loggedIn) {
+
             // Prompt for username and password
             System.out.print("Enter Command:");
             System.out.println("\n");
-            String command = userInputReader.readLine();  
-            
-            
+            String command = userInputReader.readLine();
+
             // Send the login command with username and password
             output.println(command);
-            
+
             // Receive the login response from the server
             String response = input.readLine();
             System.out.println("Server response: " + response);
 
-            if(response.equals("Login successful")){
+            if (response.equals("Login successful")) {
                 loggedIn = true;
                 break;
             }
@@ -62,15 +84,14 @@ public class Client {
                 String memberNumber = userInputReader.readLine();
                 System.out.print("Enter phone number: ");
                 String phoneNumber = userInputReader.readLine();
-                
+
                 // Send the member number and phone number to the server
                 output.println(memberNumber + " " + phoneNumber);
-                
+
                 // Receive the response from the server
                 response = input.readLine();
                 System.out.println("Server response: " + response);
-                
-                
+
                 // If the response contains a reference number, save it for future use
                 if (response.startsWith("Partial password:")) {
                     String referenceNumber = response.substring(18);
@@ -81,24 +102,15 @@ public class Client {
         }
     }
 
-
-
-
     public static void _main(String[] args) {
         try {
             Socket socket = new Socket("localhost", 8080);
-            
+
             BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
-            
-            
-            
-    
-            
-            
-            
+
             // Continue with the rest of the secure menu items if login is successful
-            
+
             // Close the connection
             socket.close();
         } catch (IOException e) {
@@ -106,8 +118,7 @@ public class Client {
         }
     }
 
-
-   private static void displayMenu() {
+    private static void displayMenu() {
         System.out.println("----- Sacco System Menu -----");
         System.out.println("1. Deposit");
         System.out.println("2. Check Statement");
