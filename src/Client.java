@@ -43,6 +43,7 @@ public class Client {
                     String res = input.readLine();
                     System.out.println(res);
                 } else if (action.equals("loanrequeststatus")) {
+                    output.println(command);
                     loanrequeststatus();
                 }
 
@@ -104,7 +105,6 @@ public class Client {
         }
     }
 
-
     private static void displayMenu() {
         System.out.println("----- Sacco System Menu -----");
         System.out.println("1. Deposit");
@@ -120,11 +120,8 @@ public class Client {
         return reader.readLine();
     }
 
-
     public void loanrequeststatus() {
         try {
-
-            System.out.println("Connected to server. You can start sending commands.");
 
             String serverResponse;
             while ((serverResponse = input.readLine()) != null) {
@@ -136,11 +133,13 @@ public class Client {
                 } else if (serverResponse.startsWith("Do you want to accept or reject the loan?")) {
                     String decision = userInputReader.readLine();
                     output.println(decision);
-                } 
-                 // Exit the loop if there is no more server response
-                
+                } else if (serverResponse.startsWith("Done:")) {
+                    System.out.println("Done");
+                    break;
+                }
+
             }
-            
+
         } catch (IOException e) {
             e.printStackTrace();
         }

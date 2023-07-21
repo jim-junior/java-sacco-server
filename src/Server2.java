@@ -11,7 +11,7 @@ import java.util.Map;
 public class Server2 {
     private static final String DB_HOST = "jdbc:mysql://localhost:3306/sacco";
     private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "PaulAkol@2244";
+    private static final String DB_PASSWORD = "";
     private Connection con = null;
 
     private static Map<String, String> partialPasswords = new HashMap<>();
@@ -60,6 +60,7 @@ public class Server2 {
 
             while (true) {
                 String request = input.readLine();
+                System.out.println("Request from client: " + request);
 
                 if (request.equals("logout")) {
                     socket.close();
@@ -72,6 +73,7 @@ public class Server2 {
                 try {
                     response = processRequest(request, output, input);
                 } catch (Exception e) {
+                    System.out.println(e);
                     response = "An Error Occured";
                 }
 
@@ -88,6 +90,7 @@ public class Server2 {
     private String processRequest(String request, PrintWriter output, BufferedReader input) throws Exception {
         String[] commandParts = request.split(" ");
         String command = commandParts[0].toLowerCase();
+        System.out.println("Command: " + command);
 
         switch (command) {
             case "login":
@@ -101,8 +104,7 @@ public class Server2 {
                 // TODO: Implement requestloan command
                 break;
             case "loanrequeststatus":
-                requestLoanStatus(commandParts, output, input);
-                return "Done";
+                return requestLoanStatus(commandParts, output, input);
             case "accept":
                 // TODO: Implement accept command
                 break;
@@ -116,9 +118,11 @@ public class Server2 {
         return "Response to the client's request";
     }
 
-    public void requestLoanStatus(String[] commandParts, PrintWriter output, BufferedReader input) throws Exception {
+    public String requestLoanStatus(String[] commandParts, PrintWriter output, BufferedReader input) throws Exception {
+        System.out.println(">>> Request loan status");
         int loanApplicationNumber = Integer.parseInt(commandParts[1]);
         String loanStatus = getLoanRequestStatus(loanApplicationNumber);
+        System.out.println("Loan status: " + loanStatus);
 
         if (loanStatus.contains("Loan Status: Granted")) {
             output.println("Do you want to accept or reject the loan? (Type 'accept' or 'reject')");
@@ -136,14 +140,16 @@ public class Server2 {
             } else {
                 output.println("Invalid decision. Loan request not updated.");
             }
+            return "Done: Success";
         } else {
             System.out.println(">>> Invalid if statement");
+            return "Done: Failed";
         }
     }
 
     private void acceptLoanRequest(int loanApplicationNumber) {
         // Database update query to set loan status as accepted
-        String sql = "UPDATE loanRequests SET loanStatus = 'Accepted' WHERE loanApplicationNumber = ?";
+        String sql = "UPDATE loanRequests SET loanStatus = 'Accepted' WHERE loanApllicationNumber = ?";
         try {
 
             PreparedStatement statement = con.prepareStatement(sql);
@@ -157,7 +163,7 @@ public class Server2 {
 
     private void rejectLoanRequest(int loanApplicationNumber) {
         // Database update query to set loan status as rejected
-        String sql = "UPDATE loanRequests SET loanStatus = 'Rejected' WHERE loanApplicationNumber = ?";
+        String sql = "UPDATE loanRequests SET loanStatus = 'Rejected' WHERE loanApllicationNumber = ?";
         try {
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setInt(1, loanApplicationNumber);
@@ -168,42 +174,34 @@ public class Server2 {
         }
     }
 
-
-
     private String getLoanRequestStatus(int loanApplicationNumber) {
-        String loanStatus = "" ;
-        String expectedInstallments  = "";
-        String expectedDates = "" ;
+        String loanStatus = "";
+        String expectedInstallments = "";
+        String expectedDates = "";
 
         // Database query to retrieve loan request status and related information
-        String sql = "SELECT loanStatus, expectedInstallments, expectedDates FROM loanRequests WHERE loanApplicationNumber = ?";
+        String sql = "SELECT loanStatus, expectedInstallments, expectedDates FROM loanRequests WHERE loanApllicationNumber = ?";
 
         try {
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setInt(1, loanApplicationNumber);
             ResultSet resultSet = statement.executeQuery();
-          if (resultSet.next()) {
+            if (resultSet.next()) {
                 loanStatus = resultSet.getString("loanStatus"); // column label stands for column name
                 expectedInstallments = resultSet.getString("expectedInstallments");
                 expectedDates = resultSet.getString("expectedDates");
-            } 
-            else { 
+            } else {
                 return "  loan application number not found ";
             }
         } catch (SQLException e) {
-            //e.printStackTrace();
+            // e.printStackTrace();
             System.out.println(e.getMessage());
-          return("an error occurred when retrieving data");
+            return ("an error occurred when retrieving data");
         }
-        
 
-
-        return  "Expected Installments: " + expectedInstallments + "\nExpected Dates: " + expectedDates + "\nLoan Status: " + loanStatus ;
+        return "Expected Installments: " + expectedInstallments + "\nExpected Dates: " + expectedDates
+                + "\nLoan Status: " + loanStatus;
     }
-
-
-
-
 
     private String processLogin(String[] commandParts, PrintWriter output, BufferedReader input) {
         if (commandParts.length != 3) {
@@ -280,9 +278,12 @@ public class Server2 {
 
     public String deposit(String[] commandArgs) {
         try {
+            if (commandArgs.length != 4) {
+                return "Invalid deposit command";
+            }
             String receiptId = commandArgs[1];
-            Integer amount = Integer.parseInt(commandArgs[2]);
-            String date = commandArgs[3];
+            String date = commandArgs[2];
+            Integer amount = Integer.parseInt(commandArgs[3]);
 
             String query = "SELECT * FROM contributions WHERE receipt_number = ? and amount = ?";
 
@@ -297,6 +298,7 @@ public class Server2 {
             return "No Reciept Found. Please try again later after new information is uploaded.";
 
         } catch (Exception e) {
+            System.out.println(e);
             return "An Error Occured";
         }
     }
