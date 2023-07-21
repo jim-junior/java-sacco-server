@@ -42,6 +42,8 @@ public class Client {
                     output.println(command);
                     String res = input.readLine();
                     System.out.println(res);
+                } else if (action.equals("loanrequeststatus")) {
+                    loanrequeststatus();
                 }
 
             }
@@ -102,21 +104,6 @@ public class Client {
         }
     }
 
-    public static void _main(String[] args) {
-        try {
-            Socket socket = new Socket("localhost", 8080);
-
-            BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
-
-            // Continue with the rest of the secure menu items if login is successful
-
-            // Close the connection
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     private static void displayMenu() {
         System.out.println("----- Sacco System Menu -----");
@@ -131,5 +118,31 @@ public class Client {
     private static String getUserInput() throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         return reader.readLine();
+    }
+
+
+    public void loanrequeststatus() {
+        try {
+
+            System.out.println("Connected to server. You can start sending commands.");
+
+            String serverResponse;
+            while ((serverResponse = input.readLine()) != null) {
+                System.out.println("Server says: " + serverResponse);
+
+                if (serverResponse.startsWith("please enter the command")) {
+                    String command = userInputReader.readLine();
+                    output.println(command);
+                } else if (serverResponse.startsWith("Do you want to accept or reject the loan?")) {
+                    String decision = userInputReader.readLine();
+                    output.println(decision);
+                } 
+                 // Exit the loop if there is no more server response
+                
+            }
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

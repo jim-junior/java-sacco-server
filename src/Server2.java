@@ -67,7 +67,13 @@ public class Server2 {
                 }
 
                 // Process the request
-                String response = processRequest(request, output, input);
+                String response;
+
+                try {
+                    response = processRequest(request, output, input);
+                } catch (Exception e) {
+                    response = "An Error Occured";
+                }
 
                 // Send the response back to the client
                 output.println(response);
@@ -79,7 +85,7 @@ public class Server2 {
         }
     }
 
-    private String processRequest(String request, PrintWriter output, BufferedReader input) {
+    private String processRequest(String request, PrintWriter output, BufferedReader input) throws Exception {
         String[] commandParts = request.split(" ");
         String command = commandParts[0].toLowerCase();
 
@@ -95,8 +101,8 @@ public class Server2 {
                 // TODO: Implement requestloan command
                 break;
             case "loanrequeststatus":
-                // TODO: Implement loanrequeststatus command
-                break;
+                requestLoanStatus(commandParts, output, input);
+                return "Done";
             case "accept":
                 // TODO: Implement accept command
                 break;
@@ -109,6 +115,95 @@ public class Server2 {
 
         return "Response to the client's request";
     }
+
+    public void requestLoanStatus(String[] commandParts, PrintWriter output, BufferedReader input) throws Exception {
+        int loanApplicationNumber = Integer.parseInt(commandParts[1]);
+        String loanStatus = getLoanRequestStatus(loanApplicationNumber);
+
+        if (loanStatus.contains("Loan Status: Granted")) {
+            output.println("Do you want to accept or reject the loan? (Type 'accept' or 'reject')");
+            String decision = input.readLine();
+            System.out.println("Client decision: " + decision);
+
+            if (decision.equalsIgnoreCase("accept")) {
+                acceptLoanRequest(loanApplicationNumber);
+                output.println("Loan request accepted. Details:");
+                output.println(getLoanRequestStatus(loanApplicationNumber));
+            } else if (decision.equalsIgnoreCase("reject")) {
+
+                rejectLoanRequest(loanApplicationNumber);
+                output.println("Loan request rejected.");
+            } else {
+                output.println("Invalid decision. Loan request not updated.");
+            }
+        } else {
+            System.out.println(">>> Invalid if statement");
+        }
+    }
+
+    private void acceptLoanRequest(int loanApplicationNumber) {
+        // Database update query to set loan status as accepted
+        String sql = "UPDATE loanRequests SET loanStatus = 'Accepted' WHERE loanApplicationNumber = ?";
+        try {
+
+            PreparedStatement statement = con.prepareStatement(sql);
+            statement.setInt(1, loanApplicationNumber);
+            statement.executeUpdate();
+            System.out.println("Loan request accepted for loan application number: " + loanApplicationNumber);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void rejectLoanRequest(int loanApplicationNumber) {
+        // Database update query to set loan status as rejected
+        String sql = "UPDATE loanRequests SET loanStatus = 'Rejected' WHERE loanApplicationNumber = ?";
+        try {
+            PreparedStatement statement = con.prepareStatement(sql);
+            statement.setInt(1, loanApplicationNumber);
+            statement.executeUpdate();
+            System.out.println("Loan request rejected for loan application number: " + loanApplicationNumber);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    private String getLoanRequestStatus(int loanApplicationNumber) {
+        String loanStatus = "" ;
+        String expectedInstallments  = "";
+        String expectedDates = "" ;
+
+        // Database query to retrieve loan request status and related information
+        String sql = "SELECT loanStatus, expectedInstallments, expectedDates FROM loanRequests WHERE loanApplicationNumber = ?";
+
+        try {
+            PreparedStatement statement = con.prepareStatement(sql);
+            statement.setInt(1, loanApplicationNumber);
+            ResultSet resultSet = statement.executeQuery();
+          if (resultSet.next()) {
+                loanStatus = resultSet.getString("loanStatus"); // column label stands for column name
+                expectedInstallments = resultSet.getString("expectedInstallments");
+                expectedDates = resultSet.getString("expectedDates");
+            } 
+            else { 
+                return "  loan application number not found ";
+            }
+        } catch (SQLException e) {
+            //e.printStackTrace();
+            System.out.println(e.getMessage());
+          return("an error occurred when retrieving data");
+        }
+        
+
+
+        return  "Expected Installments: " + expectedInstallments + "\nExpected Dates: " + expectedDates + "\nLoan Status: " + loanStatus ;
+    }
+
+
+
+
 
     private String processLogin(String[] commandParts, PrintWriter output, BufferedReader input) {
         if (commandParts.length != 3) {
