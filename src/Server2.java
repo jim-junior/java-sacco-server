@@ -1,12 +1,7 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.*;
+import java.net.*;
 import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Server2 {
     private static final String DB_HOST = "jdbc:mysql://localhost:3306/sacco";
@@ -98,8 +93,7 @@ public class Server2 {
             case "deposit":
                 return deposit(commandParts);
             case "checkstatement":
-                // TODO: Implement checkstatement command
-                break;
+                return checkLoanStatement(commandParts, output, input);
             case "requestloan":
                 // TODO: Implement requestloan command
                 break;
@@ -300,6 +294,129 @@ public class Server2 {
         } catch (Exception e) {
             System.out.println(e);
             return "An Error Occured";
+        }
+    }
+
+    public String checkLoanStatement(String[] command, PrintWriter output, BufferedReader input) {
+        try {
+
+            int memberid = Integer.parseInt(command[1]);
+            checkstatement(memberid, command[2], command[3], output);
+            loanstatus(memberid, command[2], command[3], output);
+            percentage(memberid, command[2], command[3], output);
+            loanpercentage(memberid, command[2], command[3], output);
+            return "Done: Success";
+
+        } catch (Exception e) {
+            return "Done: An Error Occured";
+        }
+
+    }
+
+    public void checkstatement(int userid, String datefrom, String dateto, PrintWriter writer) {
+        try {
+            String query = "SELECT * FROM deposit WHERE depositDate BETWEEN '" + datefrom + "' AND '" + dateto
+                    + "' AND status='redeemed' AND memberID=" + userid + "";
+            // String query = "SELECT * FROM deposit WHERE depositDate BETWEEN
+            // '"+datefrom+"' AND '"+dateto+"' AND depositStatus='redeemed' AND
+            // memberID="+userid+"";
+            Statement statement = con.createStatement();
+            ResultSet contribution = statement.executeQuery(query);
+
+            while (contribution.next()) {
+                String depositDate = contribution.getString("depositDate");
+                int amount = contribution.getInt("amount");
+                int totalAmount = 0;
+                totalAmount = 0 + amount;
+
+                writer.println("Deposit Date: " + depositDate);
+                writer.println("Amount: " + amount);
+                writer.println("contribution is: " + totalAmount);
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void loanstatus(int userid, String datefrom, String dateto, PrintWriter writer) throws Exception {
+
+        String query = "SELECT * FROM loan WHERE loandepositdate BETWEEN '" + datefrom + "' AND '" + dateto
+                + "' AND status='redeemed'AND memberID=" + userid;
+
+        // String query = "SELECT * FROM deposit WHERE depositDate BETWEEN
+        // '"+datefrom+"' AND '"+dateto+"' AND depositStatus='redeemed' AND
+        // memberID="+userid+"";
+        Statement statement = con.createStatement();
+        ResultSet contribution = statement.executeQuery(query);
+
+        while (contribution.next()) {
+
+            String loandepositDate = contribution.getString("loandepositdate");
+            int amountdeposited = contribution.getInt("amountdeposited");
+
+            writer.println("loan Datedeposit: " + loandepositDate);
+            writer.println("amountdeposited: " + amountdeposited);
+            writer.println();
+        }
+    }
+
+    public void loanpercentage(int userid, String datefrom, String dateto, PrintWriter writer) throws Exception {
+
+        String query = "SELECT memberID, COUNT(*) AS loandepositTimes, SUM(amountdeposited) AS loanamountdeposited "
+                +
+                "FROM loan " +
+                // "WHERE memberID = 101"+
+                "GROUP BY memberID";
+
+        Statement statement = con.createStatement();
+        ResultSet contribution = statement.executeQuery(query);
+
+        while (contribution.next()) {
+            int memberID = contribution.getInt("memberID");
+            if (userid == memberID) {
+                int loandepositTimes = contribution.getInt("loandepositTimes");
+                int loanamountDeposited = contribution.getInt("loanamountdeposited");
+                double percentage;
+                percentage = (double) loandepositTimes / 12 * 100;
+
+                writer.println("loanamountDeposited: " + loanamountDeposited);
+                writer.println("depositTimes: " + loandepositTimes);
+                writer.println("percentage contribution loan: " + percentage);
+
+                writer.flush();
+                System.out.println();
+            }
+
+        }
+    }
+
+    public void percentage(int userid, String datefrom, String dateto, PrintWriter writer) throws Exception {
+        String query = "SELECT memberID, COUNT(*) AS depositTimes, SUM(amount) AS totalAmountDeposited " +
+                "FROM deposit " +
+                // "WHERE memberID = 101"+
+                "GROUP BY memberID";
+
+        Statement statement = con.createStatement();
+        ResultSet contribution = statement.executeQuery(query);
+
+        while (contribution.next()) {
+            int memberID = contribution.getInt("memberID");
+            if (userid == memberID) {
+                int depositTimes = contribution.getInt("depositTimes");
+                int totalAmountDeposited = contribution.getInt("totalAmountDeposited");
+                double percentage;
+                percentage = (double) depositTimes / 12 * 100;
+
+                writer.println("totalAmountDepositedonloan: " + totalAmountDeposited);
+                writer.println("depositTimes: " + depositTimes);
+                writer.println("percentage contribution: " + percentage);
+
+                writer.flush();
+                System.out.println();
+            }
+
         }
     }
 }

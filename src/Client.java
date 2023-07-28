@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Scanner;
 
 public class Client {
     public Socket socket = null;
@@ -67,6 +68,11 @@ public class Client {
             System.out.print("Enter Command:");
             System.out.println("\n");
             String command = userInputReader.readLine();
+
+            if (!command.startsWith("login")) {
+                System.out.println("Please login first");
+                continue;
+            }
 
             // Send the login command with username and password
             output.println(command);
@@ -136,6 +142,25 @@ public class Client {
                 } else if (serverResponse.startsWith("Done:")) {
                     System.out.println("Done");
                     break;
+                }
+
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void checkLoanStatement() {
+        try {
+
+            String serverResponse;
+            while ((serverResponse = input.readLine()) != null) {
+                if (serverResponse.startsWith("Done:")) {
+                    System.out.println("Done");
+                    break;
+                } else {
+                    System.out.println(serverResponse);
                 }
 
             }
